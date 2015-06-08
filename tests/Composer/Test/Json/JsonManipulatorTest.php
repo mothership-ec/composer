@@ -34,12 +34,11 @@ class JsonManipulatorTest extends \PHPUnit_Framework_TestCase
                 'require',
                 'vendor/baz',
                 'qux',
-                '{
-    "require": {
-        "vendor/baz": "qux"
-    }
-}
-'
+                "{\n".
+"    \"require\": {\n".
+"        \"vendor/baz\": \"qux\"\n".
+"    }\n".
+"}\n"
             ),
             array(
                 '{
@@ -331,6 +330,34 @@ class JsonManipulatorTest extends \PHPUnit_Framework_TestCase
     }
 }
 '
+            ),
+            array(
+                '{
+    "require": {
+        "foo": "baz",
+        "ext-10gd": "*",
+        "ext-2mcrypt": "*",
+        "lib-foo": "*",
+        "hhvm": "*",
+        "php": ">=5.5"
+    }
+}',
+                'require',
+                'igorw/retry',
+                '*',
+                true,
+                '{
+    "require": {
+        "php": ">=5.5",
+        "hhvm": "*",
+        "ext-2mcrypt": "*",
+        "ext-10gd": "*",
+        "lib-foo": "*",
+        "foo": "baz",
+        "igorw/retry": "*"
+    }
+}
+',
             ),
         );
     }
@@ -803,6 +830,22 @@ class JsonManipulatorTest extends \PHPUnit_Framework_TestCase
 ', $manipulator->getContents());
     }
 
+    public function testAddConfigSettingWorksFromScratch()
+    {
+        $manipulator = new JsonManipulator('{
+}');
+
+        $this->assertTrue($manipulator->addConfigSetting('foo.bar', 'baz'));
+        $this->assertEquals('{
+    "config": {
+        "foo": {
+            "bar": "baz"
+        }
+    }
+}
+', $manipulator->getContents());
+    }
+
     public function testAddConfigSettingCanAdd()
     {
         $manipulator = new JsonManipulator('{
@@ -1095,6 +1138,28 @@ class JsonManipulatorTest extends \PHPUnit_Framework_TestCase
     "require-dev": {
         "foo": "qux"
     }
+}
+', $manipulator->getContents());
+    }
+
+    public function testIndentDetection()
+    {
+        $manipulator = new JsonManipulator('{
+
+  "require": {
+    "php": "5.*"
+  }
+}');
+
+        $this->assertTrue($manipulator->addMainKey('require-dev', array('foo' => 'qux')));
+        $this->assertEquals('{
+
+  "require": {
+    "php": "5.*"
+  },
+  "require-dev": {
+    "foo": "qux"
+  }
 }
 ', $manipulator->getContents());
     }
